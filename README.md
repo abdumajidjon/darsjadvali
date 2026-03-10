@@ -1,6 +1,6 @@
 # Automated Schedule & Substitution Bot
 
-A Telegram bot system for managing class schedules and detecting substitutions automatically.
+Telegram bot system for managing class schedules and detecting substitutions automatically.
 
 ## Features
 
@@ -20,68 +20,126 @@ A Telegram bot system for managing class schedules and detecting substitutions a
 - **Task Queue**: Redis + Taskiq
 - **Data Processing**: openpyxl + pandas
 
-## Setup
+## Quick Start
 
-1. Install dependencies:
+### 1. Clone Repository
+
+```bash
+git clone https://github.com/abdumajidjon/darsjadvali.git
+cd darsjadvali
+```
+
+### 2. Install Dependencies
+
 ```bash
 pip install -r requirements.txt
 ```
 
-2. Configure environment variables:
-```bash
-cp .env.example .env
-# Edit .env with your configuration
+### 3. Configure Environment
+
+Create `.env` file:
+
+```env
+# Database (Railway PostgreSQL)
+DATABASE_URL=postgresql+asyncpg://user:password@host:port/database
+
+# Redis
+REDIS_URL=redis://localhost:6379/0
+
+# Telegram Bot
+BOT_TOKEN=your_bot_token_here
+WEBHOOK_URL=https://your-domain.com/bot-webhook
+WEBHOOK_SECRET=your_webhook_secret
+
+# FastAPI
+API_HOST=0.0.0.0
+API_PORT=8000
+
+# Admin
+ADMIN_API_KEY=your_admin_api_key
+
+# Week Calculation
+ACADEMIC_START_DATE=2024-09-01
 ```
 
-3. Initialize database:
+### 4. Initialize Database
+
 ```bash
 alembic upgrade head
 ```
 
-4. Run the application:
+### 5. Run Application
+
 ```bash
 python main.py
 ```
+
+## Railway Deployment
+
+### 1. Connect GitHub Repository
+
+1. Railway dashboard > New Project > Deploy from GitHub repo
+2. Select `abdumajidjon/darsjadvali`
+
+### 2. Add PostgreSQL
+
+1. New > Add Database > PostgreSQL
+2. Railway automatically provides connection string
+
+### 3. Set Environment Variables
+
+In Railway project settings, add:
+
+```
+BOT_TOKEN=your_bot_token
+DATABASE_URL=${{Postgres.DATABASE_URL}}
+REDIS_URL=redis://localhost:6379/0
+WEBHOOK_URL=https://your-app.railway.app/bot-webhook
+ADMIN_API_KEY=your_admin_api_key
+ACADEMIC_START_DATE=2024-09-01
+```
+
+### 4. Deploy
+
+Railway automatically deploys on push to main branch.
 
 ## Project Structure
 
 ```
 .
 ├── app/
-│   ├── __init__.py
-│   ├── main.py              # FastAPI application entry point
-│   ├── bot/
-│   │   ├── __init__.py
-│   │   ├── handlers.py      # Telegram bot handlers
-│   │   └── keyboards.py     # Inline keyboards
-│   ├── api/
-│   │   ├── __init__.py
-│   │   └── routes.py         # FastAPI routes
-│   ├── database/
-│   │   ├── __init__.py
-│   │   ├── models.py         # SQLAlchemy models
-│   │   └── connection.py     # Database connection
-│   ├── services/
-│   │   ├── __init__.py
-│   │   ├── parser.py         # Excel parsing engine
-│   │   ├── diff_engine.py    # Substitution detection
-│   │   └── broadcast.py      # Message broadcasting
-│   ├── workers/
-│   │   ├── __init__.py
-│   │   └── tasks.py          # Background tasks
-│   └── utils/
-│       ├── __init__.py
-│       └── week_calculator.py
-├── alembic/                  # Database migrations
-├── requirements.txt
-├── .env.example
-└── README.md
+│   ├── main.py              # FastAPI application
+│   ├── config.py            # Configuration
+│   ├── bot/                 # Telegram bot handlers
+│   ├── api/                 # FastAPI routes
+│   ├── database/            # Models & connection
+│   ├── services/            # Business logic
+│   ├── workers/            # Background tasks
+│   └── utils/               # Utilities
+├── alembic/                 # Database migrations
+├── main.py                 # Entry point
+├── worker.py               # Worker entry point
+└── requirements.txt
 ```
 
 ## API Endpoints
 
 - `POST /bot-webhook` - Telegram webhook endpoint
 - `POST /admin/upload-schedule` - Admin schedule upload (requires API key)
+- `GET /health` - Health check
+
+## Bot Commands
+
+- `/start` - Start the bot and register user
+- `/schedule` - View current week schedule
+- `/setgroup <group_name>` - Set user's group
+
+## Documentation
+
+- [Setup Guide](SETUP.md)
+- [Database Setup](DATABASE_SETUP.md)
+- [Railway Setup](RAILWAY_SETUP.md)
+- [Bot Token Setup](BOT_TOKEN_SETUP.md)
 
 ## License
 
