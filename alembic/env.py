@@ -26,7 +26,7 @@ config = context.config
 
 # Get database URL from environment or config
 # Try to get from environment first (for Railway)
-db_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url", ""))
+db_url = os.getenv("DATABASE_URL", "")
 
 # Remove asyncpg prefix if present and convert to psycopg2 format
 if db_url:
@@ -39,6 +39,14 @@ if db_url:
         db_url = db_url.replace("postgresql://", "postgresql+psycopg2://")
     elif db_url.startswith("postgresql+asyncpg://"):
         db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+    config.set_main_option("sqlalchemy.url", db_url)
+elif config.get_main_option("sqlalchemy.url"):
+    # Use from alembic.ini if available
+    db_url = config.get_main_option("sqlalchemy.url")
+    if "+asyncpg" in db_url:
+        db_url = db_url.replace("+asyncpg", "")
+    if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
+        db_url = db_url.replace("postgresql://", "postgresql+psycopg2://")
     config.set_main_option("sqlalchemy.url", db_url)
 else:
     # Fallback: try to import settings (may fail if env vars not set)
@@ -54,9 +62,12 @@ else:
         elif db_url.startswith("postgresql+asyncpg://"):
             db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
         config.set_main_option("sqlalchemy.url", db_url)
-    except Exception:
-        # If settings can't be loaded, use default from alembic.ini
-        pass
+    except Exception as e:
+        # If settings can't be loaded, raise error with helpful message
+        raise RuntimeError(
+            f"Could not load DATABASE_URL from environment or settings. "
+            f"Please set DATABASE_URL environment variable. Error: {e}"
+        ) from e
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
