@@ -31,16 +31,28 @@ db_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url", ""))
 # Remove asyncpg prefix if present and convert to psycopg2 format
 if db_url:
     # Convert asyncpg URL to psycopg2 format for Alembic
-    db_url = db_url.replace("+asyncpg", "").replace("postgresql+asyncpg://", "postgresql+psycopg2://")
-    if not db_url.startswith("postgresql"):
-        # If no prefix, add psycopg2
+    # Remove +asyncpg prefix
+    if "+asyncpg" in db_url:
+        db_url = db_url.replace("+asyncpg", "")
+    # Ensure psycopg2 driver is specified
+    if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
         db_url = db_url.replace("postgresql://", "postgresql+psycopg2://")
+    elif db_url.startswith("postgresql+asyncpg://"):
+        db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
     config.set_main_option("sqlalchemy.url", db_url)
 else:
     # Fallback: try to import settings (may fail if env vars not set)
     try:
         from app.config import settings
-        db_url = settings.database_url.replace("+asyncpg", "").replace("postgresql+asyncpg://", "postgresql+psycopg2://")
+        db_url = settings.database_url
+        # Remove +asyncpg prefix
+        if "+asyncpg" in db_url:
+            db_url = db_url.replace("+asyncpg", "")
+        # Ensure psycopg2 driver is specified
+        if db_url.startswith("postgresql://") and "+psycopg2" not in db_url:
+            db_url = db_url.replace("postgresql://", "postgresql+psycopg2://")
+        elif db_url.startswith("postgresql+asyncpg://"):
+            db_url = db_url.replace("postgresql+asyncpg://", "postgresql+psycopg2://")
         config.set_main_option("sqlalchemy.url", db_url)
     except Exception:
         # If settings can't be loaded, use default from alembic.ini
