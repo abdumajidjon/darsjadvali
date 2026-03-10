@@ -3,8 +3,11 @@
 from sqlalchemy import Column, String, Integer, Date, ForeignKey, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base
 import uuid
-from app.database.connection import Base
+
+# Base class for models (moved here to avoid circular import in Alembic)
+Base = declarative_base()
 
 
 class User(Base):
