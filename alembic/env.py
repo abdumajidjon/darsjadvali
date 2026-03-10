@@ -80,6 +80,13 @@ target_metadata = Base.metadata
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
     url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set. Please configure it in environment variables.")
+    
+    # Ensure psycopg2 driver is specified
+    if url.startswith("postgresql://") and "+psycopg2" not in url:
+        url = url.replace("postgresql://", "postgresql+psycopg2://")
+    
     context.configure(
         url=url,
         target_metadata=target_metadata,
@@ -100,12 +107,18 @@ def do_run_migrations(connection):
 
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
-    # Create sync engine for alembic
-    configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = db_url
+    # Get database URL
+    url = config.get_main_option("sqlalchemy.url")
+    if not url:
+        raise RuntimeError("DATABASE_URL is not set. Please configure it in environment variables.")
     
+    # Ensure psycopg2 driver is specified
+    if url.startswith("postgresql://") and "+psycopg2" not in url:
+        url = url.replace("postgresql://", "postgresql+psycopg2://")
+    
+    # Create sync engine for alembic
     connectable = engine_from_config(
-        configuration,
+        {"sqlalchemy.url": url},
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
