@@ -8,14 +8,28 @@ from sqlalchemy.ext.asyncio import AsyncEngine
 
 # Import your models and config
 from app.database.connection import Base
-from app.config import settings
 
 # this is the Alembic Config object
 config = context.config
 
-# Set the database URL from settings (remove asyncpg for sync connection)
-db_url = settings.database_url.replace("+asyncpg", "").replace("postgresql+asyncpg://", "postgresql://")
-config.set_main_option("sqlalchemy.url", db_url)
+# Get database URL from environment or config
+# Try to get from environment first (for Railway)
+import os
+db_url = os.getenv("DATABASE_URL", config.get_main_option("sqlalchemy.url", ""))
+
+# Remove asyncpg prefix if present
+if db_url:
+    db_url = db_url.replace("+asyncpg", "").replace("postgresql+asyncpg://", "postgresql://")
+    config.set_main_option("sqlalchemy.url", db_url)
+else:
+    # Fallback: try to import settings (may fail if env vars not set)
+    try:
+        from app.config import settings
+        db_url = settings.database_url.replace("+asyncpg", "").replace("postgresql+asyncpg://", "postgresql://")
+        config.set_main_option("sqlalchemy.url", db_url)
+    except Exception:
+        # If settings can't be loaded, use default from alembic.ini
+        pass
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
